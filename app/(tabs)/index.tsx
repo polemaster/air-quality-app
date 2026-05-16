@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { getAppDashboardData, AppDashboardData, StationData } from '@/utils/api';
+import { getAppDashboardData, AppDashboardData, StationData, InterpolatedIndicator } from '@/utils/api';
+import { notifyIfAirQualityBad } from '@/utils/notifications';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 
@@ -34,6 +35,7 @@ export default function HomeScreen() {
       setError(null);
       const dashboardData = await getAppDashboardData();
       setData(dashboardData);
+      notifyIfAirQualityBad(dashboardData.interpolatedData.overall).catch(console.warn);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch station data');
     } finally {
@@ -51,14 +53,19 @@ export default function HomeScreen() {
     </View>
   );
 
-  const renderInterpolatedIndicator = (name: string, value: number | '-') => {
+  const renderInterpolatedIndicator = (name: string, indicator: InterpolatedIndicator) => {
     const textColor = isDark ? '#fff' : '#000';
     return (
       <View style={styles.indicatorContainer}>
         <Text style={[styles.indicatorName, { color: textColor }]}>{name}</Text>
         <Text style={[styles.indicatorValue, { color: textColor }]}>
-          {value !== '-' ? `${value} µg/m³` : '-'}
+          {indicator.value !== '-' ? `${indicator.value} µg/m³` : '-'}
         </Text>
+        {indicator.category && (
+          <Text style={[styles.indicatorCategory, { color: indicator.category.color }]} numberOfLines={1} adjustsFontSizeToFit>
+            {indicator.category.name}
+          </Text>
+        )}
       </View>
     );
   };
@@ -66,10 +73,18 @@ export default function HomeScreen() {
   const ListHeader = () => {
     if (!data) return null;
     return (
-      <View style={[styles.card, styles.specialCard, { backgroundColor: isDark ? '#2c2c2c' : '#ffffff' }]}>
+      <View style={[styles.card, styles.specialCard, {
+        backgroundColor: isDark ? '#2c2c2c' : '#ffffff',
+        borderColor: data.interpolatedData.overall?.color ?? '#4caf50',
+      }]}>
         <ThemedText style={styles.specialCardTitle}>Your Location</ThemedText>
         <ThemedText type="subtitle" style={styles.userLocationText}>{data.userLocation}</ThemedText>
         <ThemedText style={styles.interpolatedTitle}>Interpolated Local Air Quality</ThemedText>
+        {data.interpolatedData.overall && (
+          <Text style={[styles.overallCategory, { color: data.interpolatedData.overall.color }]}>
+            {data.interpolatedData.overall.name}
+          </Text>
+        )}
         <View style={styles.indicatorsGrid}>
           {renderInterpolatedIndicator('SO2', data.interpolatedData.so2)}
           {renderInterpolatedIndicator('NO2', data.interpolatedData.no2)}
@@ -198,6 +213,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(150, 150, 150, 0.2)',
     paddingTop: 12,
+  },
+  overallCategory: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 4,
+    marginBottom: 4,
   },
   cardHeader: {
     flexDirection: 'row',
