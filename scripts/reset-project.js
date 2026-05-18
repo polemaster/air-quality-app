@@ -1,11 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * This script is used to reset the project to a blank state.
- * It deletes or moves the /app, /components, /hooks, /scripts, and /constants directories to /app-example based on user input and creates a new /app directory with an index.tsx and _layout.tsx file.
- * You can remove the `reset-project` script from package.json and safely delete this file after running it.
- */
-
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
@@ -91,7 +85,7 @@ const moveDirectories = async (userInput) => {
         userInput === "y"
           ? `\n3. Delete the /${exampleDir} directory when you're done referencing it.`
           : ""
-      }`
+      }`,
     );
   } catch (error) {
     console.error(`❌ Error during script execution: ${error.message}`);
@@ -108,5 +102,5 @@ rl.question(
       console.log("❌ Invalid input. Please enter 'Y' or 'N'.");
       rl.close();
     }
-  }
+  },
 );

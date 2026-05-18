@@ -13,7 +13,6 @@ const GIOS_LEVELS: GiosCategory[] = [
   { index: 5, name: "Bardzo zły", color: "#660099" },
 ];
 
-// Upper bound (inclusive) for each level 0–4; anything above level 4 = level 5.
 const GIOS_BREAKPOINTS: Record<string, number[]> = {
   so2: [50, 100, 200, 350, 500],
   no2: [40, 100, 150, 200, 300],
@@ -46,7 +45,7 @@ export function calculateDistance(
   lat2: number,
   lon2: number,
 ): number {
-  const R = 6371; // Radius of the earth in km
+  const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
   const a =
@@ -56,7 +55,7 @@ export function calculateDistance(
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c; // Distance in km
+  const d = R * c;
   return d;
 }
 
@@ -74,7 +73,7 @@ export function idwInterpolation(
   let denominator = 0;
 
   for (const item of valuesWithDistances) {
-    if (item.distance === 0) return item.value; // Avoid division by zero, exact match
+    if (item.distance === 0) return item.value;
     const weight = 1 / Math.pow(item.distance, power);
     numerator += item.value * weight;
     denominator += weight;

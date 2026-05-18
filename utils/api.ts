@@ -1,7 +1,13 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { calculateDistance, idwInterpolation, getGiosCategory, getWorstGiosCategory, GiosCategory } from "./math";
+import {
+  calculateDistance,
+  getGiosCategory,
+  getWorstGiosCategory,
+  GiosCategory,
+  idwInterpolation,
+} from "./math";
 
 const STORED_COORDS_KEY = "@aq_last_coords";
 
@@ -121,13 +127,11 @@ const mapIndexCategory = (index: any): string => {
 };
 
 export const getAppDashboardData = async (): Promise<AppDashboardData> => {
-  // Request location permissions
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== "granted") {
     throw new Error("Permission to access location was denied");
   }
 
-  // Get current location — env vars override GPS for dev/simulator use
   const devLat = process.env.EXPO_PUBLIC_DEFAULT_LAT
     ? parseFloat(process.env.EXPO_PUBLIC_DEFAULT_LAT)
     : null;
@@ -179,7 +183,6 @@ export const getAppDashboardData = async (): Promise<AppDashboardData> => {
     console.warn("Google Maps reverse geocoding failed", e);
   }
 
-  // Fetch stations for the user's city; fall back to all stations sorted by distance
   let stations: Station[] = [];
   if (city) {
     try {
@@ -195,7 +198,6 @@ export const getAppDashboardData = async (): Promise<AppDashboardData> => {
     stations = await fetchAllStations();
   }
 
-  // Calculate distance and sort, then take the 5 closest
   stations.forEach((station) => {
     station.distance = calculateDistance(
       latitude,
@@ -207,7 +209,6 @@ export const getAppDashboardData = async (): Promise<AppDashboardData> => {
   stations.sort((a, b) => (a.distance || 0) - (b.distance || 0));
   const top5 = stations.slice(0, 5);
 
-  // Fetch detailed data for top 5 stations
   const stationDataPromises = top5.map(async (station) => {
     try {
       const [sensors, aqIndex] = await Promise.all([
@@ -309,7 +310,8 @@ export const getAppDashboardData = async (): Promise<AppDashboardData> => {
     const value = idwInterpolation(getValidDataWithDistances(pollutant));
     return {
       value,
-      category: typeof value === "number" ? getGiosCategory(pollutant, value) : null,
+      category:
+        typeof value === "number" ? getGiosCategory(pollutant, value) : null,
     };
   };
 
